@@ -38,8 +38,8 @@ def ask_business_questions():
                     "audience": audience,
                     "location": location,
                 }
-                st.session_state.page = "keywords"
-                st.rerun()
+            st.experimental_rerun()
+
             else:
                 st.warning("Please fill out all fields.")
 
