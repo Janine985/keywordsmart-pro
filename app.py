@@ -19,6 +19,9 @@ if "generated_keywords" not in st.session_state:
     st.session_state.generated_keywords = []
 if "ad_groups" not in st.session_state:
     st.session_state.ad_groups = {}
+if "setup_complete" not in st.session_state:
+    st.session_state.setup_complete = False
+
 
 
 
@@ -31,16 +34,18 @@ def ask_business_questions():
         audience = st.text_input("Who is your target audience?")
         location = st.text_input("Where are they located?")
         submitted = st.form_submit_button("Continue")
-        
-        if submitted:
-            if biz and audience and location:
-                st.session_state.business_info = {
-                    "business": biz,
-                    "audience": audience,
-                    "location": location,
-                }
-            else:
-                st.warning("Please fill out all fields.")
+
+    if submitted:
+        if biz and audience and location:
+            st.session_state.business_info = {
+                "business": biz,
+                "audience": audience,
+                "location": location,
+            }
+            st.session_state.setup_complete = True
+        else:
+            st.warning("Please fill out all fields.")
+
 
 
 # --- SKAG Ad Grouping + RSA Ad Copy ---
