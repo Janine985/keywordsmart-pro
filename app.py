@@ -7,9 +7,9 @@ import openai
 # --- Load environment variables ONLY from .env ---
 env = dotenv_values(".env")
 
-OPENAI_API_KEY = env.get("OPENAI_API_KEY")
-VALID_USERNAME = env.get("USERNAME")
-VALID_PASSWORD = env.get("PASSWORD")
+OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
+VALID_USERNAME = st.secrets["USERNAME"]
+VALID_PASSWORD = st.secrets["PASSWORD"]
 
 # --- Use OpenAI v1 client ---
 client = openai.OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
