@@ -76,7 +76,6 @@ def enrich_keywords_with_semrush(api_key, keywords, database="nz"):
         time.sleep(0.5)  # Respect API rate limits
     return pd.DataFrame(enriched_data)
 
-
 # --- Business setup ---
 def ask_business_questions():
     st.title("🧠 KeywordSmart Pro Setup")
@@ -183,6 +182,7 @@ def keyword_tool():
 
         with st.form("gpt_form"):
             st.write(f"Generate keywords for: **{seed}**")
+            region = st.selectbox("Choose SEMrush database region", ["nz", "us", "uk", "au", "ca"], key="gpt_region")
             submitted = st.form_submit_button("Generate with GPT")
             if submitted:
                 with st.spinner("Generating keywords & enriching with SEMrush..."):
@@ -194,7 +194,7 @@ def keyword_tool():
                         )
                         raw = response.choices[0].message.content
                         keywords = [re.sub(r"^\d+\.\s*\[?(.*?)\]?$", r"\1", line.strip()) for line in raw.splitlines() if line.strip()]
-                        enriched_df = enrich_keywords_with_semrush(SEMRUSH_API_KEY, keywords)
+                        enriched_df = enrich_keywords_with_semrush(SEMRUSH_API_KEY, keywords, database=region)
                         st.session_state.generated_keywords = enriched_df["Keyword"].tolist()
                         st.markdown("### ✅ Enriched Keyword Suggestions")
                         st.dataframe(enriched_df)
