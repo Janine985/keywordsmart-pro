@@ -31,27 +31,36 @@ if "ad_groups" not in st.session_state:
 if "setup_complete" not in st.session_state:
     st.session_state.setup_complete = False
 
-# --- SEMrush fetch function ---
-def fetch_semrush_keywords(api_key, keyword, database="nz"):
-    url = "https://api.semrush.com/"
-    params = {
-        "type": "phrase_related",
-        "key": api_key,
-        "phrase": keyword,
-        "database": database,
-        "display_limit": 20,
-        "export_columns": "Ph,Nq,Cp,Kd,Intent"
-    }
-
-    response = requests.get(url, params=params)
-    if response.status_code == 200:
-        lines = response.text.splitlines()[1:]  # Skip header
-        data = [line.split(";") for line in lines]
-        df = pd.DataFrame(data, columns=["Keyword", "Volume", "CPC", "Difficulty"])
-        return df
-    else:
-        st.error(f"SEMrush API error: {response.status_code}")
-        return pd.DataFrame()
+# --- SEMrush enrichment function ---
+def enrich_keywords_with_semrush(api_key, keywords, database="nz"):
+    enriched_data = []
+    for keyword in keywords:
+        url = "https://api.semrush.com/"
+        params = {
+            "type": "phrase_this",
+            "key": api_key,
+            "phrase": keyword,
+            "database": database,
+            "export_columns": "Ph,Nq,Cp,Kd"
+        }
+        response = requests.get(url, params=params)
+        if response.status_code == 200 and len(response.text.splitlines()) > 1:
+            parts = response.text.splitlines()[1].split(";")
+            enriched_data.append({
+                "Keyword": parts[0],
+                "Search Volume": int(parts[1]),
+                "CPC ($)": float(parts[2]),
+                "Difficulty (%)": int(parts[3])
+            })
+        else:
+            enriched_data.append({
+                "Keyword": keyword,
+                "Search Volume": 0,
+                "CPC ($)": 0.0,
+                "Difficulty (%)": 0
+            })
+    df = pd.DataFrame(enriched_data)
+    return df
 
 # --- Business setup ---
 def ask_business_questions():
@@ -137,7 +146,7 @@ def keyword_tool():
     elif method == "Upload file":
         with st.form("upload_form"):
             st.markdown("""
-            **📥 Upload Instructions**
+            **📅 Upload Instructions**
 
             Please upload a `.txt` or `.csv` file with **only keywords**:
 
@@ -171,7 +180,7 @@ def keyword_tool():
             st.write(f"Generate keywords for: **{seed}**")
             submitted = st.form_submit_button("Generate with GPT")
             if submitted:
-                with st.spinner("Generating keywords..."):
+                with st.spinner("Generating keywords & enriching with SEMrush..."):
                     try:
                         prompt = f"Generate 20 high-intent PPC keywords for {seed}. Format each in square brackets like [keyword]."
                         response = client.chat.completions.create(
@@ -180,10 +189,11 @@ def keyword_tool():
                         )
                         raw = response.choices[0].message.content
                         keywords = [line.strip("[] ") for line in raw.splitlines() if "[" in line]
-                        st.session_state.generated_keywords = keywords
-                        safe_rerun()
+                        enriched_df = enrich_keywords_with_semrush(SEMRUSH_API_KEY, keywords)
+                        st.session_state.generated_keywords = enriched_df["Keyword"].tolist()
+                        st.dataframe(enriched_df)
                     except Exception as e:
-                        st.error(f"❌ GPT failed: {e}")
+                        st.error(f"❌ GPT or SEMrush failed: {e}")
 
     elif method == "Use Semrush Keyword Suggestions":
         with st.form("semrush_form"):
@@ -214,14 +224,14 @@ def keyword_tool():
         df = pd.DataFrame(final_keywords, columns=["Keyword"])
         st.dataframe(df)
         csv = df.to_csv(index=False).encode("utf-8")
-        st.download_button("📥 Download Keywords CSV", data=csv, file_name="keywords.csv", mime="text/csv")
+        st.download_button("📅 Download Keywords CSV", data=csv, file_name="keywords.csv", mime="text/csv")
 
         with st.spinner("🔎 SKAG Clustering & Ad Copy Generation..."):
             ad_output = cluster_keywords_and_generate_ads(final_keywords)
             if ad_output:
                 st.markdown("### 🧠 SKAG-Based Ad Groups & Responsive Ads")
                 st.text_area("Results:", ad_output, height=500)
-                st.download_button("📥 Download Ad Groups", data=ad_output, file_name="ad_groups.txt", mime="text/plain")
+                st.download_button("📅 Download Ad Groups", data=ad_output, file_name="ad_groups.txt", mime="text/plain")
 
 # --- Main App Flow ---
 if not st.session_state.setup_complete:
