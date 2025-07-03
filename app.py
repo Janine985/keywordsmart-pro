@@ -3,6 +3,7 @@ import os
 import pandas as pd
 import openai
 import requests
+import re
 
 # --- Load Streamlit secrets ---
 OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
@@ -188,7 +189,10 @@ def keyword_tool():
                             messages=[{"role": "user", "content": prompt}]
                         )
                         raw = response.choices[0].message.content
-                        import re keywords = [re.sub(r"^\d+\.\s*\[?(.*?)\]?$", r"\1", line.strip()) for line in raw.splitlines() if line.strip()]
+
+                        # Clean up lines like '1. [keyword]'
+                        keywords = [re.sub(r"^\d+\.\s*\[?(.*?)\]?$", r"\1", line.strip()) for line in raw.splitlines() if line.strip()]
+
                         enriched_df = enrich_keywords_with_semrush(SEMRUSH_API_KEY, keywords)
                         st.session_state.generated_keywords = enriched_df["Keyword"].tolist()
                         st.dataframe(enriched_df)
@@ -204,7 +208,7 @@ def keyword_tool():
         if submitted and seed:
             with st.spinner("Fetching keyword data from Semrush..."):
                 try:
-                    df = fetch_semrush_keywords(SEMRUSH_API_KEY, seed, region)
+                    df = enrich_keywords_with_semrush(SEMRUSH_API_KEY, [seed], region)
                     if not df.empty:
                         st.markdown("### ✅ Semrush Keyword Suggestions")
                         selected = st.multiselect("Select keywords to use:", df["Keyword"].tolist())
