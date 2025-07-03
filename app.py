@@ -1,13 +1,10 @@
 import streamlit as st
 import os
 import pandas as pd
-from dotenv import dotenv_values
 import openai
 
 # --- Load Streamlit secrets ---
 OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
-VALID_USERNAME = st.secrets["USERNAME"]
-VALID_PASSWORD = st.secrets["PASSWORD"]
 
 # --- Use OpenAI v1 client ---
 client = openai.OpenAI(api_key=OPENAI_API_KEY)
@@ -16,37 +13,12 @@ client = openai.OpenAI(api_key=OPENAI_API_KEY)
 st.set_page_config(page_title="KeywordSmart Pro", page_icon="📊")
 
 # --- Session state defaults ---
-if "authenticated" not in st.session_state:
-    st.session_state.authenticated = False
-if "page" not in st.session_state:
-    st.session_state.page = "login"
 if "business_info" not in st.session_state:
     st.session_state.business_info = {}
 if "generated_keywords" not in st.session_state:
     st.session_state.generated_keywords = []
 if "ad_groups" not in st.session_state:
     st.session_state.ad_groups = {}
-
-# --- Login page ---
-def login_page():
-    st.title("🔐 KeywordSmart Pro Login")
-
-    # Prevent rerun loop on successful login
-    if st.session_state.authenticated:
-        st.session_state.page = "questions"
-        st.rerun()
-
-    with st.form("login_form"):
-        username = st.text_input("Username")
-        password = st.text_input("Password", type="password")
-        submitted = st.form_submit_button("Login")
-
-        if submitted:
-            if username == VALID_USERNAME and password == VALID_PASSWORD:
-                st.session_state.authenticated = True
-                st.rerun()
-            else:
-                st.error("❌ Invalid credentials. Please try again.")
 
 
 
