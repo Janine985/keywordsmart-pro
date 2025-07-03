@@ -31,6 +31,7 @@ def ask_business_questions():
         audience = st.text_input("Who is your target audience?")
         location = st.text_input("Where are they located?")
         submitted = st.form_submit_button("Continue")
+        
         if submitted:
             if biz and audience and location:
                 st.session_state.business_info = {
@@ -38,10 +39,10 @@ def ask_business_questions():
                     "audience": audience,
                     "location": location,
                 }
-            st.experimental_rerun()
-
+                st.experimental_rerun()
             else:
                 st.warning("Please fill out all fields.")
+
 
 # --- SKAG Ad Grouping + RSA Ad Copy ---
 def cluster_keywords_and_generate_ads(keywords):
