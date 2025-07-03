@@ -22,9 +22,6 @@ if "ad_groups" not in st.session_state:
 if "setup_complete" not in st.session_state:
     st.session_state.setup_complete = False
 
-
-
-
 # --- Business questions ---
 def ask_business_questions():
     st.title("🧠 KeywordSmart Pro Setup")
@@ -43,10 +40,9 @@ def ask_business_questions():
                 "location": location,
             }
             st.session_state.setup_complete = True
+            st.rerun()  # Force refresh to load the keyword tool
         else:
             st.warning("Please fill out all fields.")
-
-
 
 # --- SKAG Ad Grouping + RSA Ad Copy ---
 def cluster_keywords_and_generate_ads(keywords):
@@ -155,8 +151,7 @@ def keyword_tool():
                 st.download_button("📥 Download Ad Groups", data=ad_output, file_name="ad_groups.txt", mime="text/plain")
 
 # --- Main App Flow ---
-if "business_info" not in st.session_state or not st.session_state.business_info:
+if not st.session_state.setup_complete:
     ask_business_questions()
 else:
     keyword_tool()
-
