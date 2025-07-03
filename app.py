@@ -4,9 +4,9 @@ import pandas as pd
 import openai
 import requests
 
-
 # --- Load Streamlit secrets ---
 OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
+SEMRUSH_API_KEY = st.secrets["SEMRUSH_API_KEY"]
 
 # --- Use OpenAI v1 client ---
 client = openai.OpenAI(api_key=OPENAI_API_KEY)
@@ -14,7 +14,7 @@ client = openai.OpenAI(api_key=OPENAI_API_KEY)
 # --- Configure Streamlit page ---
 st.set_page_config(page_title="KeywordSmart Pro", page_icon="📊")
 
-# --- Safe rerun (works across Streamlit versions) ---
+# --- Safe rerun ---
 def safe_rerun():
     try:
         st.rerun()
@@ -31,7 +31,29 @@ if "ad_groups" not in st.session_state:
 if "setup_complete" not in st.session_state:
     st.session_state.setup_complete = False
 
-# --- Business questions ---
+# --- SEMrush fetch function ---
+def fetch_semrush_keywords(api_key, keyword, database="nz"):
+    url = "https://api.semrush.com/"
+    params = {
+        "type": "phrase_related",
+        "key": api_key,
+        "phrase": keyword,
+        "database": database,
+        "display_limit": 20,
+        "export_columns": "Ph,Nq,Cp,Kd,Intent"
+    }
+
+    response = requests.get(url, params=params)
+    if response.status_code == 200:
+        lines = response.text.splitlines()[1:]  # Skip header
+        data = [line.split(";") for line in lines]
+        df = pd.DataFrame(data, columns=["Keyword", "Volume", "CPC", "Difficulty", "Intent"])
+        return df
+    else:
+        st.error(f"SEMrush API error: {response.status_code}")
+        return pd.DataFrame()
+
+# --- Business setup ---
 def ask_business_questions():
     st.title("🧠 KeywordSmart Pro Setup")
     st.write("Let’s get to know your business.")
@@ -53,7 +75,7 @@ def ask_business_questions():
         else:
             st.warning("Please fill out all fields.")
 
-# --- SKAG Ad Grouping + RSA Ad Copy ---
+# --- GPT-based SKAG + RSA Ad Copy ---
 def cluster_keywords_and_generate_ads(keywords):
     prompt = f"""
 You are a Google Ads PPC expert in 2025. Group the following keywords using the SKAG (Single Keyword Ad Group) method. Each ad group should:
@@ -95,7 +117,12 @@ def keyword_tool():
     st.title("📊 KeywordSmart Pro")
     st.subheader("Generate, SKAG-cluster, and export ad-ready keywords with AI.")
 
-    method = st.radio("How do you want to provide keywords?", ["Manual input", "Upload file", "Let GPT suggest keywords"])
+    method = st.radio("How do you want to provide keywords?", [
+        "Manual input",
+        "Upload file",
+        "Let GPT suggest keywords",
+        "Use Semrush Keyword Suggestions"
+    ])
     keywords = []
 
     if method == "Manual input":
@@ -119,10 +146,8 @@ def keyword_tool():
 
             ⚠️ Remove metrics like search volume, CPC, or competition to avoid errors.
             """)
-
             file = st.file_uploader("Upload your keyword file", type=["txt", "csv"])
             submitted = st.form_submit_button("Submit")
-
             if submitted and file:
                 try:
                     if file.name.endswith(".txt"):
@@ -160,6 +185,29 @@ def keyword_tool():
                     except Exception as e:
                         st.error(f"❌ GPT failed: {e}")
 
+    elif method == "Use Semrush Keyword Suggestions":
+        with st.form("semrush_form"):
+            seed = st.text_input("Enter a seed keyword (e.g. beard trimmer, accounting software)")
+            region = st.selectbox("Choose a region database", ["nz", "us", "uk", "au", "ca"])
+            submitted = st.form_submit_button("Fetch Suggestions")
+
+        if submitted and seed:
+            with st.spinner("Fetching keyword data from Semrush..."):
+                try:
+                    df = fetch_semrush_keywords(SEMRUSH_API_KEY, seed, region)
+                    if not df.empty:
+                        st.markdown("### ✅ Semrush Keyword Suggestions")
+                        selected = st.multiselect("Select keywords to use:", df["Keyword"].tolist())
+                        if selected:
+                            st.session_state.generated_keywords = selected
+                            safe_rerun()
+                        st.dataframe(df)
+                    else:
+                        st.warning("No keywords returned.")
+                except Exception as e:
+                    st.error(f"❌ SEMrush fetch failed: {e}")
+
+    # --- Final keyword output + GPT clustering ---
     final_keywords = st.session_state.get("generated_keywords", [])
     if final_keywords:
         st.markdown("### ✅ Generated Keywords")
