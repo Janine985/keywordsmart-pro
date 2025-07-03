@@ -1,18 +1,14 @@
 import streamlit as st
-import os
 import pandas as pd
-from dotenv import dotenv_values
 import openai
 
-# --- Load environment variables ONLY from .env ---
-env = dotenv_values(".env")
-
+# --- Load Streamlit secrets ---
 OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
 VALID_USERNAME = st.secrets["USERNAME"]
 VALID_PASSWORD = st.secrets["PASSWORD"]
 
 # --- Use OpenAI v1 client ---
-client = openai.OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+client = openai.OpenAI(api_key=OPENAI_API_KEY)
 
 # --- Configure Streamlit page ---
 st.set_page_config(page_title="KeywordSmart Pro", page_icon="📊")
@@ -37,12 +33,13 @@ def login_page():
         password = st.text_input("Password", type="password")
         submitted = st.form_submit_button("Login")
         if submitted:
-           if username == VALID_USERNAME and password == VALID_PASSWORD:
-    st.session_state.authenticated = True
-    st.session_state.page = "questions"
-    st.rerun()
-else:
-    st.error("❌ Invalid credentials. Please try again.")
+            if username == VALID_USERNAME and password == VALID_PASSWORD:
+                st.session_state.authenticated = True
+                st.session_state.page = "questions"
+                st.rerun()
+            else:
+                st.error("❌ Invalid credentials. Please try again.")
+
 
 # --- Business questions ---
 def ask_business_questions():
