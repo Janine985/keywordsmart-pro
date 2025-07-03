@@ -153,9 +153,7 @@ def keyword_tool():
                 st.download_button("📥 Download Ad Groups", data=ad_output, file_name="ad_groups.txt", mime="text/plain")
 
 # --- Main App Flow ---
-# --- Main App Flow ---
 if not st.session_state.setup_complete:
     ask_business_questions()
 else:
     keyword_tool()
-
