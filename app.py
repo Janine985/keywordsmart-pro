@@ -5,9 +5,11 @@ from dotenv import load_dotenv
 import openai
 import io
 
+# Load environment variables first
+load_dotenv()
+
 # Load API key from Streamlit secrets (fallback to .env for local testing)
 openai.api_key = os.getenv("OPENAI_API_KEY")
-load_dotenv()
 
 # --- Login Protection ---
 def login():
