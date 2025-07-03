@@ -37,6 +37,7 @@ if "setup_complete" not in st.session_state:
 def enrich_keywords_with_semrush(api_key, keywords, database="nz"):
     enriched_data = []
     for keyword in keywords:
+        # 1st attempt: phrase_all (best-effort match)
         url = "https://api.semrush.com/"
         params = {
             "type": "phrase_all",
@@ -48,25 +49,33 @@ def enrich_keywords_with_semrush(api_key, keywords, database="nz"):
         }
         response = requests.get(url, params=params)
         lines = response.text.splitlines()
+
         if response.status_code == 200 and len(lines) > 1:
-            parts = lines[1].split(";")
             try:
-                enriched_data.append({
-                    "Keyword": keyword,
-                    "Search Volume": int(parts[1])
-                })
+                parts = lines[1].split(";")
+                volume = int(parts[1])
+                enriched_data.append({"Keyword": keyword, "Search Volume": volume})
+                continue  # Skip fallback
             except:
-                enriched_data.append({
-                    "Keyword": keyword,
-                    "Search Volume": 0
-                })
+                pass
+
+        # Fallback: try phrase_related
+        params["type"] = "phrase_related"
+        response = requests.get(url, params=params)
+        lines = response.text.splitlines()
+        if response.status_code == 200 and len(lines) > 1:
+            try:
+                parts = lines[1].split(";")
+                volume = int(parts[1])
+                enriched_data.append({"Keyword": keyword, "Search Volume": volume})
+            except:
+                enriched_data.append({"Keyword": keyword, "Search Volume": 0})
         else:
-            enriched_data.append({
-                "Keyword": keyword,
-                "Search Volume": 0
-            })
-        time.sleep(0.4)  # Respect rate limits
+            enriched_data.append({"Keyword": keyword, "Search Volume": 0})
+
+        time.sleep(0.5)  # Respect API rate limits
     return pd.DataFrame(enriched_data)
+
 
 # --- Business setup ---
 def ask_business_questions():
