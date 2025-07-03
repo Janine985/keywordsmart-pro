@@ -12,6 +12,13 @@ client = openai.OpenAI(api_key=OPENAI_API_KEY)
 # --- Configure Streamlit page ---
 st.set_page_config(page_title="KeywordSmart Pro", page_icon="📊")
 
+# --- Safe rerun (works across Streamlit versions) ---
+def safe_rerun():
+    try:
+        st.rerun()
+    except AttributeError:
+        st.experimental_rerun()
+
 # --- Session state defaults ---
 if "business_info" not in st.session_state:
     st.session_state.business_info = {}
@@ -40,7 +47,7 @@ def ask_business_questions():
                 "location": location,
             }
             st.session_state.setup_complete = True
-            st.experimental_rerun()
+            safe_rerun()
         else:
             st.warning("Please fill out all fields.")
 
@@ -96,7 +103,7 @@ def keyword_tool():
             if submitted:
                 keywords = [line.strip() for line in raw.splitlines() if line.strip()]
                 st.session_state.generated_keywords = keywords
-                st.experimental_rerun()
+                safe_rerun()
 
     elif method == "Upload file":
         with st.form("upload_form"):
@@ -123,7 +130,7 @@ def keyword_tool():
                         keywords = df.iloc[:, 0].dropna().astype(str).tolist()
                     keywords = [k.strip() for k in keywords if k.strip()]
                     st.session_state.generated_keywords = keywords
-                    st.experimental_rerun()
+                    safe_rerun()
                 except Exception as e:
                     st.error(f"❌ Failed to process file: {e}")
 
@@ -147,7 +154,7 @@ def keyword_tool():
                         raw = response.choices[0].message.content
                         keywords = [line.strip("[] ") for line in raw.splitlines() if "[" in line]
                         st.session_state.generated_keywords = keywords
-                        st.experimental_rerun()
+                        safe_rerun()
                     except Exception as e:
                         st.error(f"❌ GPT failed: {e}")
 
