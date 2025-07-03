@@ -40,6 +40,7 @@ def ask_business_questions():
                 "location": location,
             }
             st.session_state.setup_complete = True
+            st.rerun()
         else:
             st.warning("Please fill out all fields.")
 
@@ -102,16 +103,28 @@ def keyword_tool():
             file = st.file_uploader("Upload a .txt or .csv file", type=["txt", "csv"])
             submitted = st.form_submit_button("Submit")
             if submitted and file:
-                if file.name.endswith(".txt"):
-                    keywords = file.read().decode().splitlines()
-                else:
-                    try:
-                        df = pd.read_csv(file, encoding="utf-8")
-                    except UnicodeDecodeError:
-                        df = pd.read_csv(file, encoding="ISO-8859-1")
-                    keywords = df.iloc[:, 0].dropna().tolist()
-                st.session_state.generated_keywords = keywords
-                st.rerun()
+                try:
+                    if file.name.endswith(".txt"):
+                        keywords = file.read().decode().splitlines()
+                    else:
+                        try:
+                            df = pd.read_csv(file, encoding="utf-8", sep=None, engine="python")
+                        except UnicodeDecodeError:
+                            df = pd.read_csv(file, encoding="ISO-8859-1", sep=None, engine="python")
+                        if df.empty:
+                            st.error("❌ CSV file is empty or improperly formatted.")
+                            return
+                        keywords = df.iloc[:, 0].dropna().astype(str).tolist()
+
+                    if not keywords:
+                        st.error("❌ No keywords found in the file.")
+                        return
+
+                    st.session_state.generated_keywords = keywords
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"❌ Failed to process file: {e}")
+                    return
 
     elif method == "Let GPT suggest keywords":
         biz = st.session_state.business_info.get("business", "")
