@@ -39,19 +39,20 @@ def enrich_keywords_with_semrush(api_key, keywords, database="nz"):
     for keyword in keywords:
         url = "https://api.semrush.com/"
         params = {
-            "type": "phrase_this",
+            "type": "phrase_all",
             "key": api_key,
             "phrase": keyword,
             "database": database,
-            "export_columns": "Ph,Nq"
+            "export_columns": "Ph,Nq",
+            "display_limit": 1  # only fetch top 1 result
         }
         response = requests.get(url, params=params)
         lines = response.text.splitlines()
         if response.status_code == 200 and len(lines) > 1:
-            parts = lines[1].split(";")
             try:
+                parts = lines[1].split(";")
                 enriched_data.append({
-                    "Keyword": parts[0],
+                    "Keyword": keyword,
                     "Search Volume": int(parts[1])
                 })
             except:
@@ -64,8 +65,9 @@ def enrich_keywords_with_semrush(api_key, keywords, database="nz"):
                 "Keyword": keyword,
                 "Search Volume": 0
             })
-        time.sleep(0.4)  # Respect rate limits
+        time.sleep(0.5)  # respect SEMrush rate limit
     return pd.DataFrame(enriched_data)
+
 
 # --- Business setup ---
 def ask_business_questions():
