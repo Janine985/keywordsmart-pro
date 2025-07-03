@@ -38,7 +38,7 @@ def enrich_keywords_with_semrush(api_key, keywords, database="nz"):
     for keyword in keywords:
         url = "https://api.semrush.com/"
         params = {
-            "type": "phrase_this",
+            "type": "phrase_all",
             "key": api_key,
             "phrase": keyword,
             "database": database,
