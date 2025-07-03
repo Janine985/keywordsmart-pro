@@ -1,170 +1,180 @@
 import streamlit as st
 import os
 import pandas as pd
-from dotenv import load_dotenv
+from dotenv import dotenv_values
 import openai
-import io
 
-# --- Load environment variables ---
-load_dotenv()
-openai.api_key = os.getenv("OPENAI_API_KEY")
-ENV_USERNAME = os.getenv("USERNAME")
-ENV_PASSWORD = os.getenv("PASSWORD")
+# --- Load environment variables ONLY from .env ---
+env = dotenv_values(".env")
 
-# --- Session state init ---
-if "logged_in" not in st.session_state:
-    st.session_state.logged_in = False
+OPENAI_API_KEY = env.get("OPENAI_API_KEY")
+VALID_USERNAME = env.get("USERNAME")
+VALID_PASSWORD = env.get("PASSWORD")
 
-# --- Login form ---
-def login_form():
+# --- Use OpenAI v1 client ---
+client = openai.OpenAI(api_key=OPENAI_API_KEY)
+
+# --- Configure Streamlit page ---
+st.set_page_config(page_title="KeywordSmart Pro", page_icon="📊")
+
+# --- Session state defaults ---
+if "authenticated" not in st.session_state:
+    st.session_state.authenticated = False
+if "page" not in st.session_state:
+    st.session_state.page = "login"
+if "business_info" not in st.session_state:
+    st.session_state.business_info = {}
+if "generated_keywords" not in st.session_state:
+    st.session_state.generated_keywords = []
+if "ad_groups" not in st.session_state:
+    st.session_state.ad_groups = {}
+
+# --- Login page ---
+def login_page():
     st.title("🔐 KeywordSmart Pro Login")
-    with st.form("login"):
+    with st.form("login_form"):
         username = st.text_input("Username")
         password = st.text_input("Password", type="password")
         submitted = st.form_submit_button("Login")
         if submitted:
-            if username == ENV_USERNAME and password == ENV_PASSWORD:
-                st.session_state.logged_in = True
-                st.experimental_rerun()
+            if username == VALID_USERNAME and password == VALID_PASSWORD:
+                st.session_state.authenticated = True
+                st.session_state.page = "questions"
+                st.rerun()
             else:
                 st.error("❌ Invalid credentials. Please try again.")
 
-# --- If not logged in, show login ---
-if not st.session_state.logged_in:
-    login_form()
-    st.stop()
+# --- Business questions ---
+def ask_business_questions():
+    st.title("🧠 KeywordSmart Pro Setup")
+    st.write("Let’s get to know your business.")
+    with st.form("business_info_form"):
+        biz = st.text_input("What is your business?")
+        audience = st.text_input("Who is your target audience?")
+        location = st.text_input("Where are they located?")
+        submitted = st.form_submit_button("Continue")
+        if submitted:
+            if biz and audience and location:
+                st.session_state.business_info = {
+                    "business": biz,
+                    "audience": audience,
+                    "location": location,
+                }
+                st.session_state.page = "keywords"
+                st.rerun()
+            else:
+                st.warning("Please fill out all fields.")
 
-# --- Main App ---
-st.title("📊 KeywordSmart Pro")
-st.markdown("**Generate, cluster, and export ad-ready keywords with AI.**")
-
-# --- Keyword input method ---
-keyword_method = st.radio("How do you want to provide keywords?", ("Manual input", "Upload file", "Let GPT suggest keywords"))
-keywords = []
-
-# --- Manual input ---
-if keyword_method == "Manual input":
-    manual_input = st.text_area("Enter keywords (one per line):")
-    if manual_input:
-        keywords = [k.strip() for k in manual_input.splitlines() if k.strip()]
-
-# --- File upload ---
-elif keyword_method == "Upload file":
-    uploaded_file = st.file_uploader("Upload a .txt or .csv file with keywords:")
-    if uploaded_file:
-        if uploaded_file.name.endswith(".csv"):
-            df = pd.read_csv(uploaded_file)
-            keywords = df.iloc[:, 0].dropna().tolist()
-        elif uploaded_file.name.endswith(".txt"):
-            keywords = [line.decode("utf-8").strip() for line in uploaded_file.readlines() if line.strip()]
-
-# --- GPT keyword suggestion ---
-elif keyword_method == "Let GPT suggest keywords":
-    st.subheader("📋 GPT Keyword Builder")
-    business = st.text_input("What is your business or service?")
-    audience = st.text_input("Who is your ideal customer?")
-    location = st.text_input("What location do you want to target?", value="New Zealand")
-
-    if business and audience:
-        if st.button("🔍 Suggest Keywords with GPT"):
-            seed_term = f"{business} for {audience} in {location}"
-            with st.spinner("Asking GPT to generate relevant keywords..."):
-                gpt_prompt = f"""
-Generate a list of 40 high-intent keywords for a business type: {business}, targeting: {audience}, in: {location}.
-Include a mix of:
-- Commercial terms
-- Local terms
-- Branded and competitor intent if relevant
-Output only the keywords in square brackets, one per line.
-"""
-                response = openai.ChatCompletion.create(
-                    model="gpt-4",
-                    messages=[
-                        {"role": "system", "content": "You're a PPC expert helping build a Google Ads campaign."},
-                        {"role": "user", "content": gpt_prompt}
-                    ]
-                )
-                raw_keywords = response['choices'][0]['message']['content']
-                keywords = [line.strip("[] ") for line in raw_keywords.splitlines() if line.startswith("[")]
-                st.success("✅ Keywords generated successfully!")
-
-# --- GPT ad generator ---
-def generate_ads_from_keywords(keywords):
+# --- SKAG Ad Grouping + RSA Ad Copy ---
+def cluster_keywords_and_generate_ads(keywords):
     prompt = f"""
-You are a Google Ads expert. Based on the list of keywords below, cluster them into logical ad groups and campaigns.
+You are a Google Ads PPC expert in 2025. Group the following keywords using the SKAG (Single Keyword Ad Group) method. Each ad group should:
+- Have a clear name based on a core keyword
+- Include close variants only (not loosely related terms)
+- Contain no more than 6 tightly matched keywords
+- Include 3 Responsive Search Ad headlines and 2 descriptions per group
 
-For each group, provide:
-- Campaign name
-- Ad group name
-- Funnel stage (Top, Middle, Bottom)
-- Intent type (Informational, Commercial, Navigational, Branded)
-- 3 headlines
-- 3 descriptions
-- Keyword list (with match type)
-- 1 negative keyword
-- Suggested landing page type
+Output format:
+
+[Ad Group: Core Keyword]
+Keywords:
+- keyword 1
+- keyword 2
+...
+Headlines:
+- Headline 1
+- Headline 2
+- Headline 3
+Descriptions:
+- Description 1
+- Description 2
 
 Keywords:
-{keywords}
-Output in clean Markdown format.
+{', '.join(keywords)}
 """
-    with st.spinner("Clustering keywords + writing ads..."):
-        response = openai.ChatCompletion.create(
+    try:
+        response = client.chat.completions.create(
             model="gpt-4",
-            messages=[
-                {"role": "system", "content": "You're a Google Ads copywriting assistant."},
-                {"role": "user", "content": prompt}
-            ]
+            messages=[{"role": "user", "content": prompt}]
         )
-        return response['choices'][0]['message']['content']
+        return response.choices[0].message.content
+    except Exception as e:
+        st.error(f"❌ Failed to cluster & generate ads: {e}")
+        return None
 
-# --- Run GPT + download ---
-if keywords:
-    if st.button("🎯 Generate Campaign Structure"):
-        full_output = generate_ads_from_keywords(keywords)
-        st.subheader("📦 Generated Campaigns")
-        st.markdown(full_output)
+# --- Keyword Tool ---
+def keyword_tool():
+    st.title("📊 KeywordSmart Pro")
+    st.subheader("Generate, SKAG-cluster, and export ad-ready keywords with AI.")
 
-        # TXT download
-        st.download_button("📄 Download Full Text", full_output, file_name="keywordsmart_output.txt")
+    method = st.radio("How do you want to provide keywords?", ["Manual input", "Upload file", "Let GPT suggest keywords"])
+    keywords = []
 
-        # Parse basic structure to CSV
-        sections = full_output.split("---")
-        csv_data = []
-        for section in sections:
-            campaign = adgroup = funnel = intent = negative = landing = ""
-            headlines, descriptions, kws = [], [], []
+    if method == "Manual input":
+        with st.form("manual_form"):
+            raw = st.text_area("Enter keywords (one per line):")
+            submitted = st.form_submit_button("Submit")
+            if submitted:
+                keywords = [line.strip() for line in raw.splitlines() if line.strip()]
+                st.session_state.generated_keywords = keywords
+                st.rerun()
 
-            for line in section.splitlines():
-                if line.startswith("Campaign:"): campaign = line.split(":", 1)[1].strip()
-                if line.startswith("Ad Group:"): adgroup = line.split(":", 1)[1].strip()
-                if line.startswith("Funnel Stage:"): funnel = line.split(":", 1)[1].strip()
-                if line.startswith("Intent Type:"): intent = line.split(":", 1)[1].strip()
-                if "- [" in line and "]" in line: kws.append(line.split("[")[1].split("]")[0])
-                if line.startswith("- Headline"): headlines.append(line.split(":",1)[1].strip())
-                if line.startswith("- Description"): descriptions.append(line.split(":",1)[1].strip())
-                if line.startswith("Negative Keyword:"): negative = line.split(":",1)[1].strip()
-                if line.startswith("Landing Page Suggestion:"): landing = line.split(":",1)[1].strip()
+    elif method == "Upload file":
+        with st.form("upload_form"):
+            file = st.file_uploader("Upload a .txt or .csv file", type=["txt", "csv"])
+            submitted = st.form_submit_button("Submit")
+            if submitted and file:
+                if file.name.endswith(".txt"):
+                    keywords = file.read().decode().splitlines()
+                else:
+                    df = pd.read_csv(file)
+                    keywords = df.iloc[:, 0].dropna().tolist()
+                st.session_state.generated_keywords = keywords
+                st.rerun()
 
-            for kw in kws:
-                csv_data.append({
-                    "Campaign": campaign,
-                    "Ad Group": adgroup,
-                    "Funnel Stage": funnel,
-                    "Intent Type": intent,
-                    "Keyword": kw,
-                    "Headline 1": headlines[0] if len(headlines)>0 else "",
-                    "Headline 2": headlines[1] if len(headlines)>1 else "",
-                    "Headline 3": headlines[2] if len(headlines)>2 else "",
-                    "Description 1": descriptions[0] if len(descriptions)>0 else "",
-                    "Description 2": descriptions[1] if len(descriptions)>1 else "",
-                    "Description 3": descriptions[2] if len(descriptions)>2 else "",
-                    "Negative Keyword": negative,
-                    "Landing Page Suggestion": landing
-                })
+    elif method == "Let GPT suggest keywords":
+        biz = st.session_state.business_info.get("business", "")
+        audience = st.session_state.business_info.get("audience", "")
+        location = st.session_state.business_info.get("location", "")
+        seed = f"{biz} for {audience} in {location}"
 
-        if csv_data:
-            df = pd.DataFrame(csv_data)
-            csv_buffer = io.StringIO()
-            df.to_csv(csv_buffer, index=False)
-            st.download_button("📥 Download CSV", data=csv_buffer.getvalue(), file_name="keywordsmart_ads.csv", mime="text/csv")
+        with st.form("gpt_form"):
+            st.write(f"Generate keywords for: **{seed}**")
+            submitted = st.form_submit_button("Generate with GPT")
+            if submitted:
+                with st.spinner("Generating keywords..."):
+                    try:
+                        prompt = f"Generate 20 high-intent PPC keywords for {seed}. Format each in square brackets like [keyword]."
+                        response = client.chat.completions.create(
+                            model="gpt-4",
+                            messages=[{"role": "user", "content": prompt}]
+                        )
+                        raw = response.choices[0].message.content
+                        keywords = [line.strip("[] ") for line in raw.splitlines() if "[" in line]
+                        st.session_state.generated_keywords = keywords
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"❌ GPT failed: {e}")
+
+    final_keywords = st.session_state.get("generated_keywords", [])
+    if final_keywords:
+        st.markdown("### ✅ Generated Keywords")
+        df = pd.DataFrame(final_keywords, columns=["Keyword"])
+        st.dataframe(df)
+        csv = df.to_csv(index=False).encode("utf-8")
+        st.download_button("📥 Download Keywords CSV", data=csv, file_name="keywords.csv", mime="text/csv")
+
+        with st.spinner("🔎 SKAG Clustering & Ad Copy Generation..."):
+            ad_output = cluster_keywords_and_generate_ads(final_keywords)
+            if ad_output:
+                st.markdown("### 🧠 SKAG-Based Ad Groups & Responsive Ads")
+                st.text_area("Results:", ad_output, height=500)
+                st.download_button("📥 Download Ad Groups", data=ad_output, file_name="ad_groups.txt", mime="text/plain")
+
+# --- Main App Routing ---
+if not st.session_state.authenticated:
+    login_page()
+elif st.session_state.page == "questions":
+    ask_business_questions()
+elif st.session_state.page == "keywords":
+    keyword_tool()
