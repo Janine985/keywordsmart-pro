@@ -149,10 +149,8 @@ def keyword_tool():
                 st.text_area("Results:", ad_output, height=500)
                 st.download_button("📥 Download Ad Groups", data=ad_output, file_name="ad_groups.txt", mime="text/plain")
 
-# --- Main App Routing ---
-if not st.session_state.authenticated:
-    login_page()
-elif st.session_state.page == "questions":
-    ask_business_questions()
-elif st.session_state.page == "keywords":
+# --- Main App Flow ---
+ask_business_questions()
+if st.session_state.get("business_info"):
     keyword_tool()
+
