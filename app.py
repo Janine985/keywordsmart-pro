@@ -106,7 +106,11 @@ def keyword_tool():
                 if file.name.endswith(".txt"):
                     keywords = file.read().decode().splitlines()
                 else:
-                    df = pd.read_csv(file)
+                  try:
+    df = pd.read_csv(file, encoding="utf-8")
+except UnicodeDecodeError:
+    df = pd.read_csv(file, encoding="ISO-8859-1")  # fallback if utf-8 fails
+
                     keywords = df.iloc[:, 0].dropna().tolist()
                 st.session_state.generated_keywords = keywords
                 st.rerun()
