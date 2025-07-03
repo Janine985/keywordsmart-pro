@@ -27,9 +27,9 @@ def ask_business_questions():
     st.title("🧠 KeywordSmart Pro Setup")
     st.write("Let’s get to know your business.")
     with st.form("business_info_form"):
-        biz = st.text_input("What is your business?")
-        audience = st.text_input("Who is your target audience?")
-        location = st.text_input("Where are they located?")
+        biz = st.text_input("What is your business?", value=st.session_state.business_info.get("business", ""))
+        audience = st.text_input("Who is your target audience?", value=st.session_state.business_info.get("audience", ""))
+        location = st.text_input("Where are they located?", value=st.session_state.business_info.get("location", ""))
         submitted = st.form_submit_button("Continue")
 
     if submitted:
@@ -40,7 +40,6 @@ def ask_business_questions():
                 "location": location,
             }
             st.session_state.setup_complete = True
-            st.rerun()
         else:
             st.warning("Please fill out all fields.")
 
@@ -154,7 +153,9 @@ def keyword_tool():
                 st.download_button("📥 Download Ad Groups", data=ad_output, file_name="ad_groups.txt", mime="text/plain")
 
 # --- Main App Flow ---
+# --- Main App Flow ---
 if not st.session_state.setup_complete:
     ask_business_questions()
 else:
     keyword_tool()
+
