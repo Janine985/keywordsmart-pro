@@ -4,6 +4,7 @@ import pandas as pd
 import openai
 import requests
 import re
+import time
 
 # --- Load Streamlit secrets ---
 OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
@@ -13,7 +14,7 @@ SEMRUSH_API_KEY = st.secrets["SEMRUSH_API_KEY"]
 client = openai.OpenAI(api_key=OPENAI_API_KEY)
 
 # --- Configure Streamlit page ---
-st.set_page_config(page_title="KeywordSmart Pro", page_icon="📊")
+st.set_page_config(page_title="KeywordSmart Pro", page_icon="📊", initial_sidebar_state="collapsed")
 
 # --- Safe rerun ---
 def safe_rerun():
@@ -69,6 +70,7 @@ def enrich_keywords_with_semrush(api_key, keywords, database="nz"):
                 "CPC ($)": 0.0,
                 "Difficulty (%)": 0
             })
+        time.sleep(0.4)  # Respect rate limits
     return pd.DataFrame(enriched_data)
 
 # --- Business setup ---
@@ -154,16 +156,6 @@ def keyword_tool():
 
     elif method == "Upload file":
         with st.form("upload_form"):
-            st.markdown("""
-            **📅 Upload Instructions**
-
-            Please upload a `.txt` or `.csv` file with **only keywords**:
-
-            ✅ `.txt` → one keyword per line  
-            ✅ `.csv` → a single column of keywords (remove extra columns first)
-
-            ⚠️ Remove metrics like search volume, CPC, or competition to avoid errors.
-            """)
             file = st.file_uploader("Upload your keyword file", type=["txt", "csv"])
             submitted = st.form_submit_button("Submit")
             if submitted and file:
@@ -197,12 +189,10 @@ def keyword_tool():
                             messages=[{"role": "user", "content": prompt}]
                         )
                         raw = response.choices[0].message.content
-
-                        # Clean up lines like '1. [keyword]'
                         keywords = [re.sub(r"^\d+\.\s*\[?(.*?)\]?$", r"\1", line.strip()) for line in raw.splitlines() if line.strip()]
-
                         enriched_df = enrich_keywords_with_semrush(SEMRUSH_API_KEY, keywords)
                         st.session_state.generated_keywords = enriched_df["Keyword"].tolist()
+                        st.markdown("### ✅ Enriched Keyword Suggestions")
                         st.dataframe(enriched_df)
                     except Exception as e:
                         st.error(f"❌ GPT or SEMrush failed: {e}")
@@ -229,15 +219,8 @@ def keyword_tool():
                 except Exception as e:
                     st.error(f"❌ SEMrush fetch failed: {e}")
 
-    # --- Final keyword output + GPT clustering ---
     final_keywords = st.session_state.get("generated_keywords", [])
     if final_keywords:
-        st.markdown("### ✅ Generated Keywords")
-        df = pd.DataFrame(final_keywords, columns=["Keyword"])
-        st.dataframe(df)
-        csv = df.to_csv(index=False).encode("utf-8")
-        st.download_button("📅 Download Keywords CSV", data=csv, file_name="keywords.csv", mime="text/csv")
-
         with st.spinner("🔎 SKAG Clustering & Ad Copy Generation..."):
             ad_output = cluster_keywords_and_generate_ads(final_keywords)
             if ad_output:
