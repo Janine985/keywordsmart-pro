@@ -98,33 +98,36 @@ def keyword_tool():
                 st.session_state.generated_keywords = keywords
                 st.rerun()
 
-    elif method == "Upload file":
-        with st.form("upload_form"):
-            file = st.file_uploader("Upload a .txt or .csv file", type=["txt", "csv"])
-            submitted = st.form_submit_button("Submit")
-            if submitted and file:
-                try:
-                    if file.name.endswith(".txt"):
-                        keywords = file.read().decode().splitlines()
-                    else:
-                        try:
-                            df = pd.read_csv(file, encoding="utf-8", sep=None, engine="python")
-                        except UnicodeDecodeError:
-                            df = pd.read_csv(file, encoding="ISO-8859-1", sep=None, engine="python")
-                        if df.empty:
-                            st.error("❌ CSV file is empty or improperly formatted.")
-                            return
-                        keywords = df.iloc[:, 0].dropna().astype(str).tolist()
+   elif method == "Upload file":
+    with st.form("upload_form"):
+        st.markdown("""
+        **📥 Upload Instructions**
 
-                    if not keywords:
-                        st.error("❌ No keywords found in the file.")
-                        return
+        Please upload a `.txt` or `.csv` file with **only keywords**:
 
-                    st.session_state.generated_keywords = keywords
-                    st.rerun()
-                except Exception as e:
-                    st.error(f"❌ Failed to process file: {e}")
-                    return
+        ✅ `.txt` → one keyword per line  
+        ✅ `.csv` → a single column of keywords (remove extra columns first)
+
+        ⚠️ Remove metrics like search volume, CPC, or competition to avoid errors.
+        """)
+
+        file = st.file_uploader("Upload your keyword file", type=["txt", "csv"])
+        submitted = st.form_submit_button("Submit")
+
+        if submitted and file:
+            try:
+                if file.name.endswith(".txt"):
+                    keywords = file.read().decode("utf-8").splitlines()
+                else:
+                    df = pd.read_csv(file, encoding="utf-8")
+                    # Use only the first column
+                    keywords = df.iloc[:, 0].dropna().astype(str).tolist()
+                keywords = [k.strip() for k in keywords if k.strip()]
+                st.session_state.generated_keywords = keywords
+                st.rerun()
+            except Exception as e:
+                st.error(f"❌ Failed to process file: {e}")
+
 
     elif method == "Let GPT suggest keywords":
         biz = st.session_state.business_info.get("business", "")
