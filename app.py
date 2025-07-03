@@ -36,7 +36,7 @@ def login_page():
             if username == VALID_USERNAME and password == VALID_PASSWORD:
                 st.session_state.authenticated = True
                 st.session_state.page = "questions"
-                st.rerun()
+                st.experimental_rerun()
             else:
                 st.error("❌ Invalid credentials. Please try again.")
 
