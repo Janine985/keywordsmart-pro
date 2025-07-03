@@ -12,7 +12,7 @@ VALID_USERNAME = env.get("USERNAME")
 VALID_PASSWORD = env.get("PASSWORD")
 
 # --- Use OpenAI v1 client ---
-client = openai.OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+client = openai.OpenAI(api_key=OPENAI_API_KEY)
 
 # --- Configure Streamlit page ---
 st.set_page_config(page_title="KeywordSmart Pro", page_icon="📊")
