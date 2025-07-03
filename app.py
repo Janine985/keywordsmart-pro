@@ -33,7 +33,7 @@ if "ad_groups" not in st.session_state:
 if "setup_complete" not in st.session_state:
     st.session_state.setup_complete = False
 
-# --- SEMrush enrichment function ---
+# --- SEMrush enrichment function (search volume only, phrase_all fallback) ---
 def enrich_keywords_with_semrush(api_key, keywords, database="nz"):
     enriched_data = []
     for keyword in keywords:
@@ -44,13 +44,13 @@ def enrich_keywords_with_semrush(api_key, keywords, database="nz"):
             "phrase": keyword,
             "database": database,
             "export_columns": "Ph,Nq",
-            "display_limit": 1  # only fetch top 1 result
+            "display_limit": 1
         }
         response = requests.get(url, params=params)
         lines = response.text.splitlines()
         if response.status_code == 200 and len(lines) > 1:
+            parts = lines[1].split(";")
             try:
-                parts = lines[1].split(";")
                 enriched_data.append({
                     "Keyword": keyword,
                     "Search Volume": int(parts[1])
@@ -65,9 +65,8 @@ def enrich_keywords_with_semrush(api_key, keywords, database="nz"):
                 "Keyword": keyword,
                 "Search Volume": 0
             })
-        time.sleep(0.5)  # respect SEMrush rate limit
+        time.sleep(0.4)  # Respect rate limits
     return pd.DataFrame(enriched_data)
-
 
 # --- Business setup ---
 def ask_business_questions():
