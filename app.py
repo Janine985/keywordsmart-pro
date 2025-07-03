@@ -98,7 +98,7 @@ def keyword_tool():
                 st.session_state.generated_keywords = keywords
                 st.rerun()
 
-    elif method == "Upload file":
+       elif method == "Upload file":
         with st.form("upload_form"):
             file = st.file_uploader("Upload a .txt or .csv file", type=["txt", "csv"])
             submitted = st.form_submit_button("Submit")
@@ -106,10 +106,10 @@ def keyword_tool():
                 if file.name.endswith(".txt"):
                     keywords = file.read().decode().splitlines()
                 else:
-                  try:
-    df = pd.read_csv(file, encoding="utf-8")
-except UnicodeDecodeError:
-    df = pd.read_csv(file, encoding="ISO-8859-1")  # fallback if utf-8 fails
+                    try:
+                        df = pd.read_csv(file, encoding="utf-8")
+                    except UnicodeDecodeError:
+                        df = pd.read_csv(file, encoding="ISO-8859-1")  # fallback if utf-8 fails
 
                     keywords = df.iloc[:, 0].dropna().tolist()
                 st.session_state.generated_keywords = keywords
