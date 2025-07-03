@@ -45,14 +45,23 @@ def enrich_keywords_with_semrush(api_key, keywords, database="nz"):
             "export_columns": "Ph,Nq,Cp,Kd"
         }
         response = requests.get(url, params=params)
-        if response.status_code == 200 and len(response.text.splitlines()) > 1:
-            parts = response.text.splitlines()[1].split(";")
-            enriched_data.append({
-                "Keyword": parts[0],
-                "Search Volume": int(parts[1]),
-                "CPC ($)": float(parts[2]),
-                "Difficulty (%)": int(parts[3])
-            })
+        lines = response.text.splitlines()
+        if response.status_code == 200 and len(lines) > 1:
+            parts = lines[1].split(";")
+            try:
+                enriched_data.append({
+                    "Keyword": parts[0],
+                    "Search Volume": int(parts[1]),
+                    "CPC ($)": float(parts[2]),
+                    "Difficulty (%)": int(parts[3])
+                })
+            except:
+                enriched_data.append({
+                    "Keyword": keyword,
+                    "Search Volume": 0,
+                    "CPC ($)": 0.0,
+                    "Difficulty (%)": 0
+                })
         else:
             enriched_data.append({
                 "Keyword": keyword,
@@ -60,8 +69,7 @@ def enrich_keywords_with_semrush(api_key, keywords, database="nz"):
                 "CPC ($)": 0.0,
                 "Difficulty (%)": 0
             })
-    df = pd.DataFrame(enriched_data)
-    return df
+    return pd.DataFrame(enriched_data)
 
 # --- Business setup ---
 def ask_business_questions():
