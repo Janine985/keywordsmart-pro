@@ -188,7 +188,7 @@ def keyword_tool():
                             messages=[{"role": "user", "content": prompt}]
                         )
                         raw = response.choices[0].message.content
-                        keywords = [line.strip("[] ") for line in raw.splitlines() if "[" in line]
+                        import re keywords = [re.sub(r"^\d+\.\s*\[?(.*?)\]?$", r"\1", line.strip()) for line in raw.splitlines() if line.strip()]
                         enriched_df = enrich_keywords_with_semrush(SEMRUSH_API_KEY, keywords)
                         st.session_state.generated_keywords = enriched_df["Keyword"].tolist()
                         st.dataframe(enriched_df)
