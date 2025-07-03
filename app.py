@@ -37,12 +37,12 @@ def login_page():
         password = st.text_input("Password", type="password")
         submitted = st.form_submit_button("Login")
         if submitted:
-            if username == VALID_USERNAME and password == VALID_PASSWORD:
-                st.session_state.authenticated = True
-                st.session_state.page = "questions"
-                st.rerun()
-            else:
-                st.error("❌ Invalid credentials. Please try again.")
+           if username == VALID_USERNAME and password == VALID_PASSWORD:
+    st.session_state.authenticated = True
+    st.session_state.page = "questions"
+    st.rerun()
+else:
+    st.error("❌ Invalid credentials. Please try again.")
 
 # --- Business questions ---
 def ask_business_questions():
