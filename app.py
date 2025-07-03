@@ -1,5 +1,7 @@
 import streamlit as st
+import os
 import pandas as pd
+from dotenv import dotenv_values
 import openai
 
 # --- Load Streamlit secrets ---
@@ -28,17 +30,24 @@ if "ad_groups" not in st.session_state:
 # --- Login page ---
 def login_page():
     st.title("🔐 KeywordSmart Pro Login")
+
+    # Prevent rerun loop on successful login
+    if st.session_state.authenticated:
+        st.session_state.page = "questions"
+        st.experimental_rerun()
+
     with st.form("login_form"):
         username = st.text_input("Username")
         password = st.text_input("Password", type="password")
         submitted = st.form_submit_button("Login")
+
         if submitted:
             if username == VALID_USERNAME and password == VALID_PASSWORD:
                 st.session_state.authenticated = True
-                st.session_state.page = "questions"
                 st.experimental_rerun()
             else:
                 st.error("❌ Invalid credentials. Please try again.")
+
 
 
 # --- Business questions ---
