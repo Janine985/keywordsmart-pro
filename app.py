@@ -39,7 +39,6 @@ def ask_business_questions():
                     "audience": audience,
                     "location": location,
                 }
-                st.experimental_rerun()
             else:
                 st.warning("Please fill out all fields.")
 
@@ -151,7 +150,8 @@ def keyword_tool():
                 st.download_button("📥 Download Ad Groups", data=ad_output, file_name="ad_groups.txt", mime="text/plain")
 
 # --- Main App Flow ---
-ask_business_questions()
-if st.session_state.get("business_info"):
+if "business_info" not in st.session_state or not st.session_state.business_info:
+    ask_business_questions()
+else:
     keyword_tool()
 
