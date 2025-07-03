@@ -34,7 +34,7 @@ def login_page():
     # Prevent rerun loop on successful login
     if st.session_state.authenticated:
         st.session_state.page = "questions"
-        st.experimental_rerun()
+        st.rerun()
 
     with st.form("login_form"):
         username = st.text_input("Username")
