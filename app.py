@@ -39,11 +39,11 @@ def enrich_keywords_with_semrush(api_key, keywords, database="nz"):
     for keyword in keywords:
         url = "https://api.semrush.com/"
         params = {
-            "type": "phrase_all",
+            "type": "phrase_this",
             "key": api_key,
             "phrase": keyword,
             "database": database,
-            "export_columns": "Ph,Nq,Cp,Kd"
+            "export_columns": "Ph,Nq"
         }
         response = requests.get(url, params=params)
         lines = response.text.splitlines()
@@ -52,23 +52,17 @@ def enrich_keywords_with_semrush(api_key, keywords, database="nz"):
             try:
                 enriched_data.append({
                     "Keyword": parts[0],
-                    "Search Volume": int(parts[1]),
-                    "CPC ($)": float(parts[2]),
-                    "Difficulty (%)": int(parts[3])
+                    "Search Volume": int(parts[1])
                 })
             except:
                 enriched_data.append({
                     "Keyword": keyword,
-                    "Search Volume": 0,
-                    "CPC ($)": 0.0,
-                    "Difficulty (%)": 0
+                    "Search Volume": 0
                 })
         else:
             enriched_data.append({
                 "Keyword": keyword,
-                "Search Volume": 0,
-                "CPC ($)": 0.0,
-                "Difficulty (%)": 0
+                "Search Volume": 0
             })
         time.sleep(0.4)  # Respect rate limits
     return pd.DataFrame(enriched_data)
