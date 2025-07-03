@@ -8,8 +8,10 @@ import io
 # Load environment variables first
 load_dotenv()
 
-# Load API key from Streamlit secrets (fallback to .env for local testing)
+# Load API key and login credentials
 openai.api_key = os.getenv("OPENAI_API_KEY")
+APP_USERNAME = os.getenv("APP_USERNAME")
+APP_PASSWORD = os.getenv("APP_PASSWORD")
 
 # --- Login Protection ---
 def login():
@@ -19,10 +21,11 @@ def login():
         password = st.text_input("Password", type="password")
         submitted = st.form_submit_button("Login")
         if submitted:
-            if username == os.getenv("APP_USERNAME") and password == os.getenv("APP_PASSWORD"):
+            if username == APP_USERNAME and password == APP_PASSWORD:
                 st.session_state.logged_in = True
             else:
                 st.error("❌ Invalid credentials.")
+
 if "logged_in" not in st.session_state or not st.session_state.logged_in:
     login()
     st.stop()
@@ -39,6 +42,7 @@ if keyword_method == "Manual input":
     manual_input = st.text_area("Enter keywords (one per line):")
     if manual_input:
         keywords = [k.strip() for k in manual_input.splitlines() if k.strip()]
+
 elif keyword_method == "Upload file":
     uploaded_file = st.file_uploader("Upload a .txt or .csv file with keywords:")
     if uploaded_file:
@@ -47,13 +51,14 @@ elif keyword_method == "Upload file":
             keywords = df.iloc[:, 0].dropna().tolist()
         elif uploaded_file.name.endswith(".txt"):
             keywords = [line.decode("utf-8").strip() for line in uploaded_file.readlines() if line.strip()]
+
 elif keyword_method == "Let GPT suggest keywords":
     business = st.text_input("Business type (e.g., pet shop, SEO agency)")
     audience = st.text_input("Target audience (e.g., dog owners, NZ business owners)")
     location = st.text_input("Location (optional)", value="New Zealand")
-    seed_term = f"{business} for {audience} in {location}" if business and audience else None
 
-    if seed_term:
+    if business and audience:
+        seed_term = f"{business} for {audience} in {location}"
         with st.spinner("Asking GPT to suggest keywords..."):
             gpt_prompt = f"""
 Generate a list of 40 high-intent keywords for a business type: {business}, targeting: {audience}, in: {location}.
@@ -105,7 +110,7 @@ Output in clean Markdown format.
 
 # --- Run GPT and Display Output ---
 if keywords:
-    if st.button("Generate Campaign Structure"):
+    if st.button("🚀 Generate Campaign Structure"):
         full_output = generate_ads_from_keywords(keywords)
         st.subheader("📦 Generated Campaigns")
         st.markdown(full_output)
@@ -124,15 +129,15 @@ if keywords:
 
             lines = section.splitlines()
             for line in lines:
-                if line.startswith("Campaign:"): campaign = line.split(":",1)[1].strip()
-                if line.startswith("Ad Group:"): adgroup = line.split(":",1)[1].strip()
-                if line.startswith("Funnel Stage:"): funnel = line.split(":",1)[1].strip()
-                if line.startswith("Intent Type:"): intent = line.split(":",1)[1].strip()
+                if line.startswith("Campaign:"): campaign = line.split(":", 1)[1].strip()
+                if line.startswith("Ad Group:"): adgroup = line.split(":", 1)[1].strip()
+                if line.startswith("Funnel Stage:"): funnel = line.split(":", 1)[1].strip()
+                if line.startswith("Intent Type:"): intent = line.split(":", 1)[1].strip()
                 if "- [" in line and "]" in line: kws.append(line.split("[")[1].split("]")[0])
-                if line.startswith("- Headline"): headlines.append(line.split(":",1)[1].strip())
-                if line.startswith("- Description"): descriptions.append(line.split(":",1)[1].strip())
-                if line.startswith("Negative Keyword:"): negative = line.split(":",1)[1].strip()
-                if line.startswith("Landing Page Suggestion:"): landing = line.split(":",1)[1].strip()
+                if line.startswith("- Headline"): headlines.append(line.split(":", 1)[1].strip())
+                if line.startswith("- Description"): descriptions.append(line.split(":", 1)[1].strip())
+                if line.startswith("Negative Keyword:"): negative = line.split(":", 1)[1].strip()
+                if line.startswith("Landing Page Suggestion:"): landing = line.split(":", 1)[1].strip()
 
             for kw in kws:
                 csv_data.append({
@@ -141,12 +146,12 @@ if keywords:
                     "Funnel Stage": funnel,
                     "Intent Type": intent,
                     "Keyword": kw,
-                    "Headline 1": headlines[0] if len(headlines)>0 else "",
-                    "Headline 2": headlines[1] if len(headlines)>1 else "",
-                    "Headline 3": headlines[2] if len(headlines)>2 else "",
-                    "Description 1": descriptions[0] if len(descriptions)>0 else "",
-                    "Description 2": descriptions[1] if len(descriptions)>1 else "",
-                    "Description 3": descriptions[2] if len(descriptions)>2 else "",
+                    "Headline 1": headlines[0] if len(headlines) > 0 else "",
+                    "Headline 2": headlines[1] if len(headlines) > 1 else "",
+                    "Headline 3": headlines[2] if len(headlines) > 2 else "",
+                    "Description 1": descriptions[0] if len(descriptions) > 0 else "",
+                    "Description 2": descriptions[1] if len(descriptions) > 1 else "",
+                    "Description 3": descriptions[2] if len(descriptions) > 2 else "",
                     "Negative Keyword": negative,
                     "Landing Page Suggestion": landing
                 })
