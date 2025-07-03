@@ -47,7 +47,7 @@ def fetch_semrush_keywords(api_key, keyword, database="nz"):
     if response.status_code == 200:
         lines = response.text.splitlines()[1:]  # Skip header
         data = [line.split(";") for line in lines]
-        df = pd.DataFrame(data, columns=["Keyword", "Volume", "CPC", "Difficulty", "Intent"])
+        df = pd.DataFrame(data, columns=["Keyword", "Volume", "CPC", "Difficulty"])
         return df
     else:
         st.error(f"SEMrush API error: {response.status_code}")
