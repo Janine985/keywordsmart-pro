@@ -1,0 +1,67 @@
+---
+Campaign: Digital Marketing Services
+Ad Group: SEO Services
+Funnel Stage: Middle
+Intent Type: Commercial
+
+Keywords:
+- "SEO audit" (Exact)
+- "SEO services" (Phrase)
+- "SEO specialist" (Phrase)
+
+Ad Copy:
+- Headline 1: Boost Your Online Visibility with Our SEO Services
+- Description 1: Get a comprehensive SEO audit from our team of seasoned specialists. Improve your rankings today!
+- Headline 2: Need an SEO Specialist? We've Got You Covered
+- Description 2: Our team ensures your website is fully optimized and ready to rank on search engines. Get a quote now!
+- Headline 3: Top-Ranked SEO Agency in Auckland
+- Description 3: We provide expert SEO services that drive traffic, leads, and sales. Let's get started!
+
+Suggested Negative Keyword: SEO courses
+Landing Page Suggestion: Highlight the benefits of SEO, how an audit can reveal areas for improvement, and the impact that professional SEO services can have on their business. Offer a free initial consultation or SEO audit.
+
+---
+
+Campaign: Digital Marketing Services
+Ad Group: Google Ads Services
+Funnel Stage: Middle
+Intent Type: Commercial
+
+Keywords:
+- "Google Ads specialist" (Exact)
+- "Google Ads services" (Phrase)
+- "PPC services" (Phrase)
+
+Ad Copy:
+- Headline 1: Get More Leads with Our Google Ads Services
+- Description 1: Our Google Ads specialists are here to help you get the most out of your PPC campaigns. Get in touch today!
+- Headline 2: Looking for a Google Ads Specialist?
+- Description 2: We manage your Google Ads campaigns to ensure maximum ROI. Let's boost your business together!
+- Headline 3: Expert Google Ads Services in Auckland
+- Description 3: Drive more traffic and increase sales with our expert Google Ads services. Request a quote now!
+
+Suggested Negative Keyword: Google Ads tutorials
+Landing Page Suggestion: Emphasize the benefits of Google Ads, showcase successful case studies, and offer a free Google Ads performance audit.
+
+---
+
+Campaign: Digital Marketing Services
+Ad Group: Web Development Services
+Funnel Stage: Top
+Intent Type: Commercial
+
+Keywords:
+- "Web developers" (Exact)
+- "Web development services" (Phrase)
+- "Website design" (Phrase)
+
+Ad Copy:
+- Headline 1: Need a Website? Our Web Developers Can Help
+- Description 1: We build user-friendly, SEO-optimized websites that convert. Let's bring your vision to life!
+- Headline 2: Expert Web Development Services in Auckland
+- Description 2: From design to development, we've got all your website needs covered. Get a quote now!
+- Headline 3: Your Business Deserves a Stunning Website
+- Description 3: Our team of expert web developers is ready to create the perfect website for your business. Contact us today!
+
+Suggested Negative Keyword: Web development courses
+Landing Page Suggestion: Discuss the importance of a professional website, the process of working with your team, and showcase a portfolio of past work. Offer a free website consultation or website audit.
